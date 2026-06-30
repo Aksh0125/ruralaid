@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RuralHealthConnect — High Level Design Document</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a202c; background: #fff; line-height: 1.7; }
+  .page { max-width: 900px; margin: 0 auto; padding: 48px 40px; }
+  h1 { font-size: 32px; color: #2d6a4f; border-bottom: 3px solid #2d6a4f; padding-bottom: 12px; margin-bottom: 8px; }
+  h2 { font-size: 22px; color: #1b4332; margin: 36px 0 12px; border-left: 4px solid #2d6a4f; padding-left: 12px; }
+  h3 { font-size: 16px; color: #2d6a4f; margin: 20px 0 8px; }
+  p { margin-bottom: 12px; font-size: 14px; color: #2d3748; }
+  .subtitle { color: #718096; font-size: 15px; margin-bottom: 4px; }
+  .meta { background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 8px; padding: 16px 20px; margin: 20px 0; font-size: 13px; }
+  .meta table { width: 100%; border-collapse: collapse; }
+  .meta td { padding: 4px 12px 4px 0; color: #4a5568; }
+  .meta td:first-child { font-weight: 600; color: #276749; width: 180px; }
+  table.data { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  table.data th { background: #2d6a4f; color: white; padding: 10px 14px; text-align: left; }
+  table.data td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  table.data tr:nth-child(even) td { background: #f7fafc; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-green { background: #c6f6d5; color: #276749; }
+  .badge-blue { background: #bee3f8; color: #2c5282; }
+  .badge-yellow { background: #fefcbf; color: #744210; }
+  .badge-red { background: #fed7d7; color: #c53030; }
+  .arch-box { border: 2px solid #2d6a4f; border-radius: 10px; padding: 16px; margin: 12px 0; }
+  .arch-box h3 { margin-top: 0; }
+  .flow-step { display: flex; align-items: flex-start; margin-bottom: 12px; }
+  .step-num { background: #2d6a4f; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; margin-right: 12px; margin-top: 2px; }
+  .step-text { font-size: 14px; color: #2d3748; }
+  .component-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .component-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f7fafc; }
+  .component-card h3 { margin-top: 0; font-size: 14px; }
+  .component-card p { font-size: 12px; margin-bottom: 0; }
+  ul { padding-left: 20px; margin-bottom: 12px; }
+  ul li { font-size: 14px; color: #2d3748; margin-bottom: 4px; }
+  .toc { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+  .toc h3 { margin-top: 0; color: #2d6a4f; }
+  .toc ol { padding-left: 20px; }
+  .toc li { font-size: 14px; margin-bottom: 4px; color: #2b6cb0; }
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0; }
+  @media print {
+    body { font-size: 12px; }
+    .page { padding: 20px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<h1>🌿 RuralHealthConnect</h1>
+<p class="subtitle">High Level Design Document</p>
+<div class="meta">
+  <table>
+    <tr><td>Project Name</td><td>RuralHealthConnect (RURALaid)</td></tr>
+    <tr><td>Version</td><td>1.0</td></tr>
+    <tr><td>Date</td><td>June 2026</td></tr>
+    <tr><td>Document Type</td><td>High Level Design (HLD)</td></tr>
+    <tr><td>Status</td><td><span class="badge badge-green">In Development</span></td></tr>
+    <tr><td>Tech Stack</td><td>Node.js + TypeScript, React, PostgreSQL + PostGIS, Redis, Docker</td></tr>
+  </table>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li>Executive Summary</li>
+    <li>Problem Statement</li>
+    <li>System Overview & Architecture</li>
+    <li>Component Design</li>
+    <li>Data Flow & Consultation Lifecycle</li>
+    <li>Database Design</li>
+    <li>API Endpoints</li>
+    <li>Security Design</li>
+    <li>Add-On Features</li>
+    <li>Technology Stack</li>
+    <li>Deployment Architecture</li>
+  </ol>
+</div>
+<hr class="divider">
+
+<!-- SECTION 1 -->
+<h2>1. Executive Summary</h2>
+<p>RuralHealthConnect is an asynchronous teleconsultation platform designed to bridge the healthcare access gap in rural and semi-urban India. The platform connects patients in remote areas with qualified doctors through a mobile-first web application, eliminating the need for real-time connectivity or physical travel.</p>
+<p>Patients describe their illness in text (in any language — Hindi, Hinglish, or English), the system automatically matches their request to nearby specialist doctors using geospatial querying, a doctor reviews and submits a structured treatment plan, and the patient pays a nominal fee to unlock and view the medical advice.</p>
+<p><strong>Key differentiators:</strong></p>
+<ul>
+  <li>Asynchronous model — works on low-bandwidth connections</li>
+  <li>Multi-language input with automatic English translation for matching</li>
+  <li>Geographic-aware doctor matching using PostGIS</li>
+  <li>End-to-end medical data encryption (AES-256-GCM)</li>
+  <li>Video prescription add-on — doctors can record a video explaining their prescription</li>
+  <li>Rural zone classification for priority routing</li>
+</ul>
+<hr class="divider">
+
+<!-- SECTION 2 -->
+<h2>2. Problem Statement</h2>
+<p>Rural India faces a severe shortage of accessible healthcare:</p>
+<ul>
+  <li>Over <strong>600 million</strong> people in rural areas have limited access to specialist doctors</li>
+  <li>Nearest specialist may be 50–200 km away, requiring travel that costs more than consultation</li>
+  <li>Poor internet connectivity makes real-time video consultations unreliable</li>
+  <li>Low health literacy makes it difficult for patients to articulate symptoms in English</li>
+  <li>Doctors in small towns have under-utilized capacity but no discovery mechanism</li>
+</ul>
+<p><strong>RuralHealthConnect solves this by:</strong></p>
+<ul>
+  <li>Enabling asynchronous text-based consultation — no real-time connection needed</li>
+  <li>Accepting illness descriptions in Hindi/Hinglish and auto-translating for matching</li>
+  <li>Using GPS to find the geographically closest matching doctor</li>
+  <li>Making consultations affordable (pay-per-unlock model)</li>
+</ul>
+<hr class="divider">
+
+<!-- SECTION 3 -->
+<h2>3. System Overview & Architecture</h2>
+<p>The system follows a <strong>three-tier architecture</strong>: a React web frontend, a Node.js/Express REST API backend, and a PostgreSQL + PostGIS database with Redis for ephemeral state.</p>
+
+<div class="arch-box">
+  <h3>🏗 Architecture Layers</h3>
+  <table class="data">
+    <tr><th>Layer</th><th>Technology</th><th>Responsibility</th></tr>
+    <tr><td>Presentation</td><td>React (TypeScript)</td><td>Patient and Doctor web UI, OTP login, consultation submission, treatment plan view</td></tr>
+    <tr><td>API Backend</td><td>Node.js + Express + TypeScript</td><td>Business logic, authentication, geo-matching, payment processing</td></tr>
+    <tr><td>Database</td><td>PostgreSQL 15 + PostGIS 3.3</td><td>Persistent storage, geospatial queries, encrypted treatment plans</td></tr>
+    <tr><td>Cache</td><td>Redis 7</td><td>OTP storage (10-min TTL), BullMQ job queues</td></tr>
+    <tr><td>Background Jobs</td><td>BullMQ</td><td>Doctor matching, forwarding expiry, rural zone tagging, PII deletion</td></tr>
+    <tr><td>Storage</td><td>AWS S3</td><td>Prescription video files (private, signed URL access)</td></tr>
+    <tr><td>Notifications</td><td>Firebase Cloud Messaging</td><td>Push notifications to patient and doctor devices</td></tr>
+    <tr><td>Payments</td><td>Razorpay</td><td>UPI, mobile money, payment confirmation webhooks</td></tr>
+    <tr><td>Translation</td><td>Google Translate API (free)</td><td>Auto-translate Hindi/Hinglish illness descriptions to English</td></tr>
+  </table>
+</div>
+
+<h3>Architecture Diagram (Textual)</h3>
+<div class="arch-box">
+  <pre style="font-size:12px; line-height:1.8; color:#2d3748; font-family: monospace;">
+  ┌─────────────────────────────────────────┐
+  │         React Frontend (Port 3001)       │
+  │  Patient Screens  |  Doctor Screens      │
+  └──────────────┬──────────────────────────┘
+                 │ HTTPS / REST API
+  ┌──────────────▼──────────────────────────┐
+  │      Node.js Express API (Port 3000)     │
+  │  Auth │ Consult │ Match │ Pay │ Notify   │
+  └──┬─────────┬──────────┬──────────┬──────┘
+     │         │          │          │
+  ┌──▼──┐  ┌──▼──┐   ┌───▼───┐  ┌──▼──────┐
+  │ PG  │  │Redis│   │BullMQ │  │External  │
+  │PostG│  │ OTP │   │Workers│  │ Services │
+  │ IS  │  │Queue│   │       │  │FCM/Pay/S3│
+  └─────┘  └─────┘   └───────┘  └─────────┘
+  </pre>
+</div>
+<hr class="divider">
+
+<!-- SECTION 4 -->
+<h2>4. Component Design</h2>
+<div class="component-grid">
+  <div class="component-card">
+    <h3>🔐 Auth Service</h3>
+    <p>Handles patient/doctor registration, OTP lifecycle (6-digit, 10-min TTL, 3 attempts), JWT issuance (24h expiry). OTP stored in Redis. SMS via Twilio/MSG91.</p>
+  </div>
+  <div class="component-card">
+    <h3>👤 Patient Service</h3>
+    <p>Patient profile management, consultation history (paginated, reverse-chronological), account deletion with PII anonymization (30-day hard delete).</p>
+  </div>
+  <div class="component-card">
+    <h3>👨‍⚕️ Doctor Service</h3>
+    <p>Doctor profile CRUD, specialization management (1–5 tags), availability status updates (30s SLA), geographic service area with PostGIS storage, consultation queue management.</p>
+  </div>
+  <div class="component-card">
+    <h3>📋 Consultation Service</h3>
+    <p>Consultation request creation, status machine (PENDING → ACCEPTED → TREATMENT_READY → UNLOCKED), role-aware serialization (strips PII from doctor view), atomic acceptance.</p>
+  </div>
+  <div class="component-card">
+    <h3>🗺 Matcher Service</h3>
+    <p>BullMQ worker. Extracts specialization keywords from illness description, queries doctors via PostGIS ST_DWithin, ranks by distance, forwards to top-10. Expands radius 50→100→150→200km. Falls back to any available doctor.</p>
+  </div>
+  <div class="component-card">
+    <h3>💊 Treatment Plan Service</h3>
+    <p>Structured treatment plan (diagnosis + steps + medications), AES-256-GCM encryption at rest, immutable after submission, optional video prescription upload to S3.</p>
+  </div>
+  <div class="component-card">
+    <h3>💳 Payment Service</h3>
+    <p>Razorpay order creation, HMAC-SHA256 webhook verification, idempotent payment confirmation, consultation unlock on success, payment receipt generation, 3-attempt retry limit.</p>
+  </div>
+  <div class="component-card">
+    <h3>🔔 Notification Service</h3>
+    <p>Firebase Cloud Messaging (FCM) push notifications. Notifications: forwarded request (doctor), accepted (patient), treatment ready (patient), payment confirmed (patient). Offline queuing via FCM.</p>
+  </div>
+</div>
+<hr class="divider">
+
+<!-- SECTION 5 -->
+<h2>5. Data Flow & Consultation Lifecycle</h2>
+
+<h3>Full Consultation Flow</h3>
+<div class="flow-step"><div class="step-num">1</div><div class="step-text"><strong>Patient Registration:</strong> Patient registers with name, phone (E.164), DOB, gender, GPS location. OTP sent to phone → verified → JWT issued.</div></div>
+<div class="flow-step"><div class="step-num">2</div><div class="step-text"><strong>Consultation Submission:</strong> Patient types illness description (20–2000 chars) in any language. System auto-translates to English, captures GPS coordinates, creates Consultation_Request with status = PENDING.</div></div>
+<div class="flow-step"><div class="step-num">3</div><div class="step-text"><strong>Doctor Matching:</strong> Matcher BullMQ worker extracts specialization keywords, queries PostGIS for doctors within 50km, expands to 500km if none found, falls back to any available doctor. Creates Consultation_Forward records for top-10 ranked doctors.</div></div>
+<div class="flow-step"><div class="step-num">4</div><div class="step-text"><strong>Doctor Notification:</strong> FCM push notification sent to matched doctors with first 200 chars of illness description. Doctor sees the request in their dashboard (only district shown, no patient PII).</div></div>
+<div class="flow-step"><div class="step-num">5</div><div class="step-text"><strong>Doctor Accepts:</strong> Doctor accepts consultation. Status → ACCEPTED atomically. Patient notified via FCM. No other doctor can accept same request.</div></div>
+<div class="flow-step"><div class="step-num">6</div><div class="step-text"><strong>Treatment Plan Submission:</strong> Doctor fills structured form: diagnosis (50–2000 chars), treatment steps (1–20), medications (optional), optional video prescription. All fields encrypted with AES-256-GCM. Status → TREATMENT_READY. Record marked immutable.</div></div>
+<div class="flow-step"><div class="step-num">7</div><div class="step-text"><strong>Patient Pays:</strong> Patient sees paywall. Initiates Razorpay payment (UPI/mobile money). On confirmation, status → UNLOCKED. Treatment plan decrypted and shown. Signed S3 URL for video if present.</div></div>
+<div class="flow-step"><div class="step-num">8</div><div class="step-text"><strong>History Access:</strong> Patient can always access unlocked treatment plans from consultation history. No re-payment required.</div></div>
+
+<h3>Consultation Status State Machine</h3>
+<table class="data">
+  <tr><th>Status</th><th>Trigger</th><th>Next Status</th></tr>
+  <tr><td><span class="badge badge-yellow">PENDING</span></td><td>Patient submits consultation</td><td>ACCEPTED or UNMATCHED</td></tr>
+  <tr><td><span class="badge badge-blue">ACCEPTED</span></td><td>Doctor accepts</td><td>TREATMENT_READY</td></tr>
+  <tr><td><span class="badge badge-green">TREATMENT_READY</span></td><td>Doctor submits plan</td><td>UNLOCKED</td></tr>
+  <tr><td><span class="badge badge-green">UNLOCKED</span></td><td>Patient pays</td><td>Terminal state</td></tr>
+  <tr><td><span class="badge badge-red">UNMATCHED</span></td><td>No doctors found after 4 radius expansions</td><td>Terminal state</td></tr>
+</table>
+<hr class="divider">
+
+<!-- SECTION 6 -->
+<h2>6. Database Design</h2>
+<h3>Key Tables</h3>
+<table class="data">
+  <tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr>
+  <tr><td>patients</td><td>Registered patient accounts</td><td>id, full_name, phone_e164, date_of_birth, gender, location (PostGIS POINT), status</td></tr>
+  <tr><td>doctors</td><td>Doctor profiles with geo data</td><td>id, full_name, license_number, availability_status, service_area_center (PostGIS POINT + GIST index), service_area_radius_km, account_status</td></tr>
+  <tr><td>doctor_specializations</td><td>Doctor specialty tags (1–5 per doctor)</td><td>id, doctor_id (FK), specialization_tag</td></tr>
+  <tr><td>rural_zones</td><td>Geographic rural zone boundaries</td><td>id, name, boundary_polygon (PostGIS POLYGON)</td></tr>
+  <tr><td>consultation_requests</td><td>Core consultation records</td><td>id, patient_id, status, illness_description, patient_coordinates, patient_district, accepted_by_doctor_id</td></tr>
+  <tr><td>consultation_forwards</td><td>Forwarding records per doctor</td><td>id, consultation_id, doctor_id, status, rank_order, expires_at</td></tr>
+  <tr><td>treatment_plans</td><td>Encrypted treatment plans</td><td>id, consultation_id, diagnosis_summary_encrypted, treatment_steps_encrypted, medications_encrypted, prescription_video_url, is_immutable</td></tr>
+  <tr><td>payment_records</td><td>Payment tracking</td><td>id, consultation_id, razorpay_order_id, razorpay_payment_id (unique), amount, status</td></tr>
+  <tr><td>device_tokens</td><td>FCM push tokens</td><td>id, user_id, user_role, fcm_token (unique per user)</td></tr>
+  <tr><td>otp_audit</td><td>OTP event audit trail</td><td>id, phone_e164, event_type, created_at</td></tr>
+</table>
+
+<h3>PostGIS Geo-Query Pattern</h3>
+<p>Doctor matching uses <strong>ST_DWithin</strong> with a GIST index on <code>service_area_center</code> for sub-500ms queries on 100k+ doctor profiles:</p>
+<pre style="background:#f7fafc; border:1px solid #e2e8f0; padding:14px; border-radius:8px; font-size:12px; overflow-x:auto;">
+SELECT d.id, ST_Distance(d.service_area_center, patient_point) / 1000 AS distance_km
+FROM doctors d
+JOIN doctor_specializations ds ON ds.doctor_id = d.id
+WHERE d.availability_status = 'ACTIVE'
+  AND d.account_status = 'APPROVED'
+  AND ds.specialization_tag = ANY($specialization_tags)
+  AND ST_DWithin(d.service_area_center, patient_point, $radius_meters)
+ORDER BY distance_km ASC LIMIT 10;
+</pre>
+<hr class="divider">
+
+<!-- SECTION 7 -->
+<h2>7. API Endpoints</h2>
+<table class="data">
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/auth/register/patient</td><td>None</td><td>Register patient, send OTP</td></tr>
+  <tr><td>POST</td><td>/auth/register/doctor</td><td>None</td><td>Register doctor, validate license</td></tr>
+  <tr><td>POST</td><td>/auth/verify-otp</td><td>None</td><td>Verify OTP, return JWT</td></tr>
+  <tr><td>POST</td><td>/auth/send-otp</td><td>None</td><td>Send OTP for login</td></tr>
+  <tr><td>POST</td><td>/auth/login</td><td>None</td><td>Login via OTP for patient or doctor</td></tr>
+  <tr><td>POST</td><td>/consultations</td><td>PATIENT</td><td>Submit consultation request</td></tr>
+  <tr><td>GET</td><td>/consultations/:id</td><td>Any</td><td>Get consultation (role-aware, strips PII for doctors)</td></tr>
+  <tr><td>POST</td><td>/consultations/:id/accept</td><td>DOCTOR</td><td>Accept a consultation</td></tr>
+  <tr><td>POST</td><td>/consultations/:id/treatment-plan</td><td>DOCTOR</td><td>Submit treatment plan (encrypted)</td></tr>
+  <tr><td>GET</td><td>/consultations/:id/treatment-plan</td><td>Any</td><td>View treatment plan (paywall for patients)</td></tr>
+  <tr><td>POST</td><td>/consultations/:id/treatment-plan/video</td><td>DOCTOR</td><td>Upload prescription video to S3</td></tr>
+  <tr><td>GET</td><td>/patients/me/consultations</td><td>PATIENT</td><td>Patient consultation history</td></tr>
+  <tr><td>DELETE</td><td>/patients/me</td><td>PATIENT</td><td>Delete account, anonymize PII</td></tr>
+  <tr><td>GET</td><td>/doctors/me</td><td>DOCTOR</td><td>Get doctor profile</td></tr>
+  <tr><td>PUT</td><td>/doctors/me</td><td>DOCTOR</td><td>Update doctor profile</td></tr>
+  <tr><td>PUT</td><td>/doctors/me/availability</td><td>DOCTOR</td><td>Update availability status</td></tr>
+  <tr><td>GET</td><td>/doctors/me/queue</td><td>DOCTOR</td><td>Get consultation queue</td></tr>
+  <tr><td>POST</td><td>/payments/initiate</td><td>PATIENT</td><td>Create Razorpay payment order</td></tr>
+  <tr><td>POST</td><td>/payments/confirm</td><td>None (webhook)</td><td>Razorpay webhook — unlock treatment plan</td></tr>
+  <tr><td>GET</td><td>/payments/:id/receipt</td><td>PATIENT</td><td>Get payment receipt</td></tr>
+</table>
+<hr class="divider">
+
+<!-- SECTION 8 -->
+<h2>8. Security Design</h2>
+<table class="data">
+  <tr><th>Security Layer</th><th>Implementation</th></tr>
+  <tr><td>Authentication</td><td>Phone OTP (6-digit, 10-min TTL, 3 attempts max) + JWT Bearer tokens (24h expiry, HS256)</td></tr>
+  <tr><td>Authorization</td><td>Role-Based Access Control (PATIENT / DOCTOR). Middleware enforces role on every protected endpoint. Patients cannot access other patients' data.</td></tr>
+  <tr><td>Data Encryption at Rest</td><td>AES-256-GCM for all Treatment Plan fields (diagnosis, steps, medications). Key stored in environment / KMS. IV + auth tag packed with ciphertext in base64.</td></tr>
+  <tr><td>Data Encryption in Transit</td><td>TLS 1.2+ enforced on all client-server communication. HTTPS-only in production.</td></tr>
+  <tr><td>Patient PII Protection</td><td>Doctors never see patient name, phone, DOB, or exact coordinates. Only administrative district shown. Role-aware serializer strips PII fields before sending response.</td></tr>
+  <tr><td>Payment Security</td><td>Razorpay HMAC-SHA256 webhook signature verification. Idempotent payment processing (checked by razorpay_payment_id uniqueness).</td></tr>
+  <tr><td>Video Access Control</td><td>Prescription videos stored as private S3 objects. Access via time-limited signed URLs (1-hour expiry) generated server-side only for authenticated, payment-confirmed patients.</td></tr>
+  <tr><td>PII Lifecycle</td><td>On account deletion: immediate anonymization of all linked records. Hard deletion scheduled within 30 days via BullMQ with exponential backoff retry.</td></tr>
+  <tr><td>Security Headers</td><td>Helmet.js: Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options. CORS restricted to frontend origin.</td></tr>
+  <tr><td>Input Validation</td><td>All fields validated at API layer before DB insert. Field-level errors returned to client. SQL injection prevented by parameterized queries throughout.</td></tr>
+</table>
+<hr class="divider">
+
+<!-- SECTION 9 -->
+<h2>9. Add-On Features</h2>
+<div class="component-grid">
+  <div class="component-card">
+    <h3>🌐 Multi-Language Input</h3>
+    <p>Patients can describe symptoms in Hindi, Hinglish, or English. The backend auto-detects language and translates to English using Google Translate API before keyword extraction and doctor matching. Original text preserved in logs.</p>
+  </div>
+  <div class="component-card">
+    <h3>🎥 Video Prescription</h3>
+    <p>Doctor can record or upload a short video (MP4/MOV, max 2 min, 100MB) before submitting the treatment plan. Video stored privately in AWS S3. Accessible to patient only after payment confirmation via time-limited signed URL.</p>
+  </div>
+  <div class="component-card">
+    <h3>🗺 Rural Zone Tagging</h3>
+    <p>Background BullMQ job tags each doctor with the rural zone they serve using PostGIS ST_Contains check against stored boundary polygons. Enables priority routing to doctors serving classified rural areas.</p>
+  </div>
+  <div class="component-card">
+    <h3>⏰ Forwarding Expiry</h3>
+    <p>If a doctor doesn't respond within 24 hours, the forward is marked expired and the request is automatically forwarded to the next ranked candidate doctor. Background job runs every 5 minutes.</p>
+  </div>
+</div>
+<hr class="divider">
+
+<!-- SECTION 10 -->
+<h2>10. Technology Stack</h2>
+<table class="data">
+  <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Reason</th></tr>
+  <tr><td>Frontend</td><td>React + TypeScript</td><td>18.x</td><td>Component-based UI, fast development, no mobile SDK needed</td></tr>
+  <tr><td>Backend</td><td>Node.js + Express + TypeScript</td><td>Node 20.x</td><td>Non-blocking I/O suitable for async consultation flow</td></tr>
+  <tr><td>Database</td><td>PostgreSQL + PostGIS</td><td>PG 15, PostGIS 3.3</td><td>Native geospatial extension, sub-500ms radius queries on 100k+ rows</td></tr>
+  <tr><td>Cache / Queue</td><td>Redis + BullMQ</td><td>Redis 7</td><td>OTP TTL, background job queues with retry policies</td></tr>
+  <tr><td>Auth</td><td>JWT (jsonwebtoken)</td><td>9.x</td><td>Stateless, role-embedded tokens</td></tr>
+  <tr><td>Encryption</td><td>Node.js crypto (AES-256-GCM)</td><td>Built-in</td><td>NIST SP 800-131A compliant, no external dependency</td></tr>
+  <tr><td>Payments</td><td>Razorpay</td><td>Latest SDK</td><td>UPI + mobile money support, widely used in rural India</td></tr>
+  <tr><td>Push Notifications</td><td>Firebase Cloud Messaging</td><td>firebase-admin</td><td>Handles offline device queuing, critical for rural connectivity</td></tr>
+  <tr><td>Video Storage</td><td>AWS S3</td><td>AWS SDK v3</td><td>Private object storage with signed URL access control</td></tr>
+  <tr><td>SMS / OTP</td><td>Twilio / MSG91</td><td>—</td><td>MSG91 preferred for India DLT compliance</td></tr>
+  <tr><td>Translation</td><td>Google Translate API</td><td>Free endpoint</td><td>Hindi/Hinglish → English for doctor matching keywords</td></tr>
+  <tr><td>Containerization</td><td>Docker + Docker Compose</td><td>Latest</td><td>Consistent dev/prod environment for PG, Redis, API</td></tr>
+</table>
+<hr class="divider">
+
+<!-- SECTION 11 -->
+<h2>11. Deployment Architecture</h2>
+<table class="data">
+  <tr><th>Component</th><th>Deployment</th><th>Notes</th></tr>
+  <tr><td>React Frontend</td><td>Vercel / Netlify / S3 + CloudFront</td><td>Static build, CDN-distributed</td></tr>
+  <tr><td>Node.js API</td><td>AWS EC2 / DigitalOcean Droplet / Railway</td><td>Docker container, auto-restart</td></tr>
+  <tr><td>PostgreSQL + PostGIS</td><td>AWS RDS / Supabase / Self-hosted Docker</td><td>PostGIS extension required</td></tr>
+  <tr><td>Redis</td><td>AWS ElastiCache / Upstash / Self-hosted Docker</td><td>Persistence optional (OTP is ephemeral)</td></tr>
+  <tr><td>Prescription Videos</td><td>AWS S3 (private bucket)</td><td>Signed URLs generated server-side</td></tr>
+  <tr><td>Background Workers</td><td>Same Node.js process or separate worker Dyno</td><td>BullMQ workers started alongside API</td></tr>
+</table>
+
+<h3>Environment Variables Required</h3>
+<table class="data">
+  <tr><th>Variable</th><th>Purpose</th></tr>
+  <tr><td>DATABASE_URL</td><td>PostgreSQL connection string</td></tr>
+  <tr><td>REDIS_URL</td><td>Redis connection string</td></tr>
+  <tr><td>JWT_SECRET</td><td>JWT signing secret (min 32 chars)</td></tr>
+  <tr><td>ENCRYPTION_KEY</td><td>AES-256 key (64-char hex = 32 bytes)</td></tr>
+  <tr><td>RAZORPAY_KEY_ID / SECRET</td><td>Razorpay API credentials</td></tr>
+  <tr><td>FCM_SERVICE_ACCOUNT_JSON</td><td>Firebase service account for push notifications</td></tr>
+  <tr><td>AWS_S3_BUCKET / REGION / ACCESS_KEY_ID / SECRET_ACCESS_KEY</td><td>S3 video storage credentials</td></tr>
+</table>
+<hr class="divider">
+
+<div style="text-align:center; padding:24px 0; color:#a0aec0; font-size:13px;">
+  <p>RuralHealthConnect — High Level Design Document</p>
+  <p>Version 1.0 · June 2026 · Confidential</p>
+  <p style="margin-top:8px;">
+    <button onclick="window.print()" style="background:#2d6a4f; color:white; border:none; padding:10px 24px; border-radius:8px; font-size:14px; cursor:pointer;">🖨 Print / Save as PDF</button>
+  </p>
+</div>
+
+</div>
+</body>
+</html>

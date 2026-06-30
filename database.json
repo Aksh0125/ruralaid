@@ -1,0 +1,7 @@
+{
+  "default": {
+    "url": {
+      "ENV": "DATABASE_URL"
+    }
+  }
+}

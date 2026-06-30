@@ -1,0 +1,22 @@
+{
+  "fever": ["GENERAL_PRACTICE", "INTERNAL_MEDICINE"],
+  "cough": ["GENERAL_PRACTICE", "PULMONOLOGY"],
+  "chest": ["CARDIOLOGY", "PULMONOLOGY"],
+  "heart": ["CARDIOLOGY"],
+  "skin": ["DERMATOLOGY"],
+  "rash": ["DERMATOLOGY"],
+  "child": ["PEDIATRICS"],
+  "baby": ["PEDIATRICS"],
+  "bone": ["ORTHOPEDICS"],
+  "joint": ["ORTHOPEDICS"],
+  "eye": ["OPHTHALMOLOGY"],
+  "tooth": ["DENTISTRY"],
+  "mental": ["PSYCHIATRY"],
+  "anxiety": ["PSYCHIATRY"],
+  "diabetes": ["ENDOCRINOLOGY", "GENERAL_PRACTICE"],
+  "pregnancy": ["OBSTETRICS"],
+  "stomach": ["GASTROENTEROLOGY", "GENERAL_PRACTICE"],
+  "headache": ["NEUROLOGY", "GENERAL_PRACTICE"],
+  "urine": ["UROLOGY", "NEPHROLOGY"],
+  "kidney": ["NEPHROLOGY"]
+}
