@@ -1,16 +1,27 @@
-FROM node:20-alpine
+# Stage 1: builder — install all deps (including devDependencies) and compile TypeScript
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
 COPY migrations ./migrations
 
-RUN npm install -g typescript ts-node
 RUN npm run build
+
+# Stage 2: production — lean image with only runtime dependencies
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist ./dist
+COPY migrations ./migrations
 
 EXPOSE 3000
 
