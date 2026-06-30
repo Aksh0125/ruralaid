@@ -1,16 +1,31 @@
-FROM node:20-alpine
+# ── Stage 1: Builder ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install ALL dependencies (including devDependencies for TypeScript compilation)
+COPY package*.json ./
+RUN npm ci
+
+# Copy source and compile TypeScript
+COPY tsconfig.json ./
+COPY src ./src
+RUN npx tsc
+
+# ── Stage 2: Production ───────────────────────────────────────────────────────
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# Install only production dependencies
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY tsconfig.json ./
-COPY src ./src
-COPY migrations ./migrations
+# Copy compiled output from builder stage
+COPY --from=builder /app/dist ./dist
 
-RUN npm install -g typescript ts-node
-RUN npm run build
+# Copy migrations folder
+COPY migrations ./migrations
 
 EXPOSE 3000
 
