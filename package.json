@@ -49,6 +49,7 @@
     "multer": "^2.2.0",
     "node-pg-migrate": "^8.0.4",
     "pg": "^8.21.0",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "twilio": "^5.7.1"
   }
 }
