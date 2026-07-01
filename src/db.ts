@@ -8,6 +8,8 @@ export const db = new Pool({
   ssl: process.env.DATABASE_URL?.includes('supabase')
     ? { rejectUnauthorized: false }
     : undefined,
+  // Transaction pooler (port 6543) doesn't support prepared statements
+  max: 10,
 });
 
 export {};
