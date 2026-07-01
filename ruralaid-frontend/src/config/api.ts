@@ -1,4 +1,4 @@
-const BASE_URL = 'ruralaid-production.up.railway.app';
+const BASE_URL = 'https://ruralaid-production.up.railway.app';
 
 export const API = {
   // Auth
