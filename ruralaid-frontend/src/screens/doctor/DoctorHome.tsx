@@ -24,7 +24,7 @@ const DoctorHome = () => {
   const handleAccept = async (consultationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await axios.post(API.acceptConsultation(consultationId), {}, { headers });
+      await axios.post(API.acceptConsultation(consultationId), {}, { headers: { Authorization: `Bearer ${token}` } });
       setConsultations(prev => prev.map(c =>
         c.id === consultationId ? { ...c, status: 'ACCEPTED' } : c
       ));
