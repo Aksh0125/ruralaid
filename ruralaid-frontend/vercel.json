@@ -1,3 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
+  "buildCommand": "DISABLE_ESLINT_PLUGIN=true npm run build",
+  "outputDirectory": "build"
 }
