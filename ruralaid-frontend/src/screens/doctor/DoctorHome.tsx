@@ -16,10 +16,11 @@ const DoctorHome = () => {
   // We'll use a simple approach: show recent consultations
   useEffect(() => {
     // Fetch doctor queue
-    axios.get(API.doctorQueue, { headers })
+    axios.get(API.doctorQueue, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setConsultations(res.data?.queue || res.data || []))
       .catch(() => setError('Could not load queue.'))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleAccept = async (consultationId: string, e: React.MouseEvent) => {
