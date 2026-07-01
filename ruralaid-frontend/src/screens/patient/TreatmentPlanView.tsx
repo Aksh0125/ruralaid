@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../../config/api';
@@ -13,9 +13,9 @@ const TreatmentPlanView = () => {
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [error, setError] = useState('');
-  const headers = { Authorization: `Bearer ${token}` };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const headers = { Authorization: `Bearer ${token}` };
     try {
       const cRes = await axios.get(API.consultation(id!), { headers });
       setConsultation(cRes.data);
@@ -28,11 +28,12 @@ const TreatmentPlanView = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, token]);
 
-  useEffect(() => { fetchData(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handlePay = async () => {
+    const headers = { Authorization: `Bearer ${token}` };
     setPayLoading(true); setError('');
     try {
       const orderRes = await axios.post(API.initiatePayment, { consultation_id: id }, { headers });

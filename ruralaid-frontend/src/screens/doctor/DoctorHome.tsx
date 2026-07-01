@@ -10,7 +10,6 @@ const DoctorHome = () => {
   const [consultations, setConsultations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const headers = { Authorization: `Bearer ${token}` };
 
   // Fetch all consultations forwarded to this doctor
   // We'll use a simple approach: show recent consultations
@@ -20,7 +19,6 @@ const DoctorHome = () => {
       .then(res => setConsultations(res.data?.queue || res.data || []))
       .catch(() => setError('Could not load queue.'))
       .finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleAccept = async (consultationId: string, e: React.MouseEvent) => {
