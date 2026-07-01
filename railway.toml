@@ -3,5 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "NODE_TLS_REJECT_UNAUTHORIZED=0 npm run migrate:up || echo 'Migration failed, continuing...' ; node dist/app.js"
+startCommand = "node dist/app.js"
 restartPolicyType = "ON_FAILURE"
