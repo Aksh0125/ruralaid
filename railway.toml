@@ -3,5 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm run migrate:up && node dist/app.js"
+startCommand = "npm run migrate:up || echo 'Migration failed, continuing...' ; node dist/app.js"
 restartPolicyType = "ON_FAILURE"
