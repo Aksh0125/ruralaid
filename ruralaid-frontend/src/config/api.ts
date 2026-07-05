@@ -1,4 +1,10 @@
-const BASE_URL = 'https://ruralaid-production.up.railway.app';
+// Use Railway backend for APK/production, localhost for web dev
+const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+const BASE_URL = isNative
+  ? 'https://ruralaid-production.up.railway.app'
+  : (window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://ruralaid-production.up.railway.app');
 
 export const API = {
   // Auth
