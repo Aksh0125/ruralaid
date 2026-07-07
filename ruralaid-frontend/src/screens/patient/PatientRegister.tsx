@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../../config/api';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 const PatientRegister = () => {
   const navigate = useNavigate();
@@ -11,24 +13,39 @@ const PatientRegister = () => {
   const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const requestLocation = () => {
+  const requestLocation = async () => {
     setLocationStatus('requesting');
     setError('');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // Use Capacitor Geolocation plugin on Android
+        const permission = await Geolocation.requestPermissions();
+        if (permission.location !== 'granted') {
+          setLocationStatus('denied');
+          setError('Location permission denied. Go to phone Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
+          return;
+        }
+        const pos = await Geolocation.getCurrentPosition({ timeout: 15000, enableHighAccuracy: false });
         setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         setLocationStatus('granted');
-      },
-      (err) => {
-        setLocationStatus('denied');
-        if (err.code === 1) {
-          setError('Location permission denied. Please enable location in your phone settings and try again.');
-        } else {
-          setError('Could not get location. Please try again.');
-        }
-      },
-      { timeout: 15000, enableHighAccuracy: false }
-    );
+      } else {
+        // Web browser fallback
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+            setLocationStatus('granted');
+          },
+          (err) => {
+            setLocationStatus('denied');
+            setError('Location access denied. Please allow location and try again.');
+          },
+          { timeout: 15000, enableHighAccuracy: false }
+        );
+      }
+    } catch (err: any) {
+      setLocationStatus('denied');
+      setError('Could not get location. Please try again.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

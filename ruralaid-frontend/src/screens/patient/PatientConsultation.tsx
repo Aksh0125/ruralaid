@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../../config/api';
 import { useAuth } from '../../context/AuthContext';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 const PatientConsultation = () => {
   const navigate = useNavigate();
@@ -15,28 +17,43 @@ const PatientConsultation = () => {
 
   const headers = { Authorization: `Bearer ${token}` };
 
+  const getLocation = async (): Promise<{ latitude: number; longitude: number }> => {
+    if (Capacitor.isNativePlatform()) {
+      const permission = await Geolocation.requestPermissions();
+      if (permission.location !== 'granted') {
+        throw new Error('Location permission denied. Go to Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
+      }
+      const pos = await Geolocation.getCurrentPosition({ timeout: 15000, enableHighAccuracy: false });
+      return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+    } else {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+          () => reject(new Error('Location access denied.')),
+          { timeout: 15000, enableHighAccuracy: false }
+        );
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setLoading(true);
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      try {
-        const res = await axios.post(API.consultations, {
-          illness_description: description,
-          additional_context: context || undefined,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        }, { headers });
-        setSuccess(`Consultation submitted! ID: ${res.data.id}. We are finding doctors near you.`);
-        setTimeout(() => navigate('/patient/history'), 2500);
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Submission failed.');
-      } finally {
-        setLoading(false);
-      }
-    }, () => {
-      setError('Location access required. Please enable GPS and try again.');
+    try {
+      const { latitude, longitude } = await getLocation();
+      const res = await axios.post(API.consultations, {
+        illness_description: description,
+        additional_context: context || undefined,
+        latitude,
+        longitude,
+      }, { headers });
+      setSuccess(`Consultation submitted! ID: ${res.data.id}. We are finding doctors near you.`);
+      setTimeout(() => navigate('/patient/history'), 2500);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || err.message || 'Submission failed.');
+    } finally {
       setLoading(false);
-    });
+    }
   };
 
   return (
