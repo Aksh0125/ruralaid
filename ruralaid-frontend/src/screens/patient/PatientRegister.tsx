@@ -2,8 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../../config/api';
-import { Capacitor } from '@capacitor/core';
-import { Geolocation } from '@capacitor/geolocation';
+
+const getLocation = (): Promise<{ latitude: number; longitude: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      (err) => reject(err),
+      { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+    );
+  });
+};
 
 const PatientRegister = () => {
   const navigate = useNavigate();
@@ -17,34 +29,16 @@ const PatientRegister = () => {
     setLocationStatus('requesting');
     setError('');
     try {
-      if (Capacitor.isNativePlatform()) {
-        // Use Capacitor Geolocation plugin on Android
-        const permission = await Geolocation.requestPermissions();
-        if (permission.location !== 'granted') {
-          setLocationStatus('denied');
-          setError('Location permission denied. Go to phone Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
-          return;
-        }
-        const pos = await Geolocation.getCurrentPosition({ timeout: 15000, enableHighAccuracy: false });
-        setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        setLocationStatus('granted');
-      } else {
-        // Web browser fallback
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-            setLocationStatus('granted');
-          },
-          (err) => {
-            setLocationStatus('denied');
-            setError('Location access denied. Please allow location and try again.');
-          },
-          { timeout: 15000, enableHighAccuracy: false }
-        );
-      }
+      const position = await getLocation();
+      setCoords(position);
+      setLocationStatus('granted');
     } catch (err: any) {
       setLocationStatus('denied');
-      setError('Could not get location. Please try again.');
+      if (err.code === 1) {
+        setError('Location denied. Go to phone Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
+      } else {
+        setError('Could not get location. Make sure GPS is on and try again.');
+      }
     }
   };
 

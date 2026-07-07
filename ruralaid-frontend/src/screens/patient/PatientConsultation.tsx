@@ -3,8 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../../config/api';
 import { useAuth } from '../../context/AuthContext';
-import { Capacitor } from '@capacitor/core';
-import { Geolocation } from '@capacitor/geolocation';
+
+const getLocation = (): Promise<{ latitude: number; longitude: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      (err) => reject(err),
+      { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+    );
+  });
+};
 
 const PatientConsultation = () => {
   const navigate = useNavigate();
@@ -17,25 +29,6 @@ const PatientConsultation = () => {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  const getLocation = async (): Promise<{ latitude: number; longitude: number }> => {
-    if (Capacitor.isNativePlatform()) {
-      const permission = await Geolocation.requestPermissions();
-      if (permission.location !== 'granted') {
-        throw new Error('Location permission denied. Go to Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
-      }
-      const pos = await Geolocation.getCurrentPosition({ timeout: 15000, enableHighAccuracy: false });
-      return { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-    } else {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-          () => reject(new Error('Location access denied.')),
-          { timeout: 15000, enableHighAccuracy: false }
-        );
-      });
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setLoading(true);
@@ -47,10 +40,14 @@ const PatientConsultation = () => {
         latitude,
         longitude,
       }, { headers });
-      setSuccess(`Consultation submitted! ID: ${res.data.id}. We are finding doctors near you.`);
+      setSuccess(`Consultation submitted! We are finding doctors near you.`);
       setTimeout(() => navigate('/patient/history'), 2500);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || err.message || 'Submission failed.');
+      if (err.code === 1) {
+        setError('Location denied. Go to Settings → Apps → RuralHealthConnect → Permissions → Location → Allow.');
+      } else {
+        setError(err.response?.data?.error?.message || err.message || 'Submission failed.');
+      }
     } finally {
       setLoading(false);
     }
