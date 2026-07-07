@@ -36,6 +36,8 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://localhost', // Capacitor Android APK
+  'capacitor://localhost', // Capacitor iOS
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
@@ -43,7 +45,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.some(o => origin.startsWith(o)) || origin.endsWith('.vercel.app')) {
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
