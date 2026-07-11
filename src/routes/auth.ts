@@ -176,8 +176,9 @@ router.post('/register/doctor', async (req: Request, res: Response, next: NextFu
 
     const doctorId = doctor.rows[0].id;
 
-    // Insert specializations
-    for (const tag of (specializations || [])) {
+    // Insert specializations (always include GENERAL_PRACTICE as fallback)
+    const allTags = new Set([...( specializations || []), 'GENERAL_PRACTICE']);
+    for (const tag of allTags) {
       await db.query(
         'INSERT INTO doctor_specializations (doctor_id, specialization_tag) VALUES ($1, $2)',
         [doctorId, tag]
